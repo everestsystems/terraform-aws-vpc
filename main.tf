@@ -139,19 +139,19 @@ resource "aws_route_table_association" "public_routing_table" {
 }
 
 resource "aws_route_table" "private_routetable" {
-  count  = var.create_private_subnets ? 1 : 0
+  count  = var.create_private_subnets ? length(local.az) : 0
   vpc_id = aws_vpc.vpc.id
 
   tags = local.tags
 }
 
 resource "aws_route" "private_route" {
-  count      = var.create_private_subnets ? 1 : 0
+  count      = var.create_private_subnets ? length(local.az) : 0
   depends_on = [aws_route_table.private_routetable]
 
-  route_table_id         = element(aws_route_table.private_routetable.*.id, 0)
+  route_table_id         = element(aws_route_table.private_routetable.*.id, count.index)
   destination_cidr_block = "0.0.0.0/0"
-  nat_gateway_id         = element(aws_nat_gateway.nat.*.id, 0)
+  nat_gateway_id         = element(aws_nat_gateway.nat.*.id, count.index)
 }
 
 resource "aws_subnet" "private_subnet" {
@@ -184,7 +184,7 @@ resource "aws_subnet" "private_subnet" {
 
 resource "aws_route_table_association" "private_routing_table" {
   subnet_id      = element(aws_subnet.private_subnet.*.id, count.index)
-  route_table_id = element(aws_route_table.private_routetable.*.id, 0)
+  route_table_id = element(aws_route_table.private_routetable.*.id, count.index)
   count          = var.create_private_subnets ? length(local.az) : 0
 }
 
@@ -202,7 +202,7 @@ resource "aws_vpc_endpoint" "s3_vpc_endpoint" {
 }
 
 resource "aws_vpc_endpoint_route_table_association" "private_s3" {
-  count = var.create_s3_vpc_endpoint && var.create_private_subnets ? 1 : 0
+  count = var.create_s3_vpc_endpoint && var.create_private_subnets ? length(local.az) : 0
 
   vpc_endpoint_id = element(aws_vpc_endpoint.s3_vpc_endpoint.*.id, 0)
   route_table_id  = element(aws_route_table.private_routetable.*.id, count.index)
@@ -216,16 +216,16 @@ resource "aws_vpc_endpoint_route_table_association" "public_s3" {
 }
 
 resource "aws_eip" "nat" {
-  count = var.create_private_subnets ? 1 : 0
+  count = var.create_private_subnets ? length(local.az) : 0
   vpc   = true
 
   tags = local.tags
 }
 
 resource "aws_nat_gateway" "nat" {
-  count         = var.create_private_subnets ? 1 : 0
-  allocation_id = element(aws_eip.nat.*.id, 0)
-  subnet_id     = aws_subnet.public_subnet[0].id
+  count         = var.create_private_subnets ? length(local.az) : 0
+  allocation_id = element(aws_eip.nat.*.id, count.index)
+  subnet_id     = aws_subnet.public_subnet[count.index].id
 
   tags = local.tags
 }
@@ -241,4 +241,3 @@ resource "aws_route53_zone" "local" {
     vpc_id = aws_vpc.vpc.id
   }
 }
-
