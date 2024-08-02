@@ -146,7 +146,7 @@ resource "aws_route_table" "private_routetable" {
 }
 
 resource "aws_route" "private_route" {
-  count      = var.create_private_subnets ? length(local.az) : 0
+  count      = var.create_nat_gateways ? length(local.az) : 0
   depends_on = [aws_route_table.private_routetable]
 
   route_table_id         = element(aws_route_table.private_routetable.*.id, count.index)
@@ -216,14 +216,15 @@ resource "aws_vpc_endpoint_route_table_association" "public_s3" {
 }
 
 resource "aws_eip" "nat" {
-  count = var.create_private_subnets ? length(local.az) : 0
+  count = var.create_nat_gateways ? length(local.az) : 0
   vpc   = true
 
   tags = local.tags
 }
 
 resource "aws_nat_gateway" "nat" {
-  count         = var.create_private_subnets ? length(local.az) : 0
+  count = var.create_nat_gateways ? length(local.az) : 0
+
   allocation_id = element(aws_eip.nat.*.id, count.index)
   subnet_id     = aws_subnet.public_subnet[count.index].id
 

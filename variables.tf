@@ -73,3 +73,9 @@ variable "enable_create_defaults" {
   type        = bool
   default     = false
 }
+
+variable "create_nat_gateways" {
+  description = "Indicates to create NAT gateways."
+  type        = bool
+  default     = true
+}
