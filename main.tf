@@ -216,8 +216,8 @@ resource "aws_vpc_endpoint_route_table_association" "public_s3" {
 }
 
 resource "aws_eip" "nat" {
-  count = var.create_nat_gateways ? length(local.az) : 0
-  vpc   = true
+  count  = var.create_nat_gateways ? length(local.az) : 0
+  domain = "vpc"
 
   tags = local.tags
 }
